@@ -1,41 +1,46 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { UserDispatch } from './App';
 
-const User = ({user}) => {
-    return (
-        <li>
-            <span>{user.username} : </span> <span>{user.email}</span>
-        </li>
-    );
-}
+const User = React.memo(
+    function User({user}){
+         const dispatch = useContext(UserDispatch);
 
-const UserList = () => {
-    const users = [
-        {
-            id: 1,
-            username: 'wanni',
-            email: 'wanni@gmail.com'
-        },
-        {
-            id: 2,
-            username: 'curry',
-            email: 'curry@gmail.com'
-        },
-        {
-            id: 3,
-            username: 'tester',
-            email: 'tester@gmail.com'
-        }
-    ];
+         return (
+            <li
+            style={{
+                cursor: 'pointer',
+                color: user.active ? 'green' : 'black'
+              }}
+              onClick={() => {
+                dispatch({ type: 'TOGGLE_USER', id: user.id });
+              }}
+              >
+                <span onClick={() => {
+                     dispatch({type: 'TOGGLE_USER', id: user.id});
+                 }}>
+                     {user.username}
+                </span> :  &nbsp; 
+                <span>{user.email}</span>
+                <button onClick={() => {
+                    dispatch({ type: 'REMOVE_USER', id: user.id });
+                    }}>삭제</button>
+            </li>
+         );
+    }
+);
+
+const UserList = ({users, onRemove, onToggle}) => {
+    
     return (
         <ul>
             {/* <User user={users[0]} />
             <User user={users[1]}/>
             <User user={users[2]}/> */}
-            {users.map((user, index) => (
-                <User user={user} key={index} />
+            {users.map(user => (
+                <User user={user} key={user.id} />
             ))}
         </ul>
     );
 }
 
-export default UserList;
+export default React.memo(UserList);

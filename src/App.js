@@ -1,37 +1,103 @@
-import React from 'react';
-import Hello from './Hello';
-import Wrapper from './Wrapper';
-import Counter from './Counter';
-import InputSample from './InputSample';
-import './App.css'
+import React, { useRef, useReducer, useMemo, useCallback } from 'react';
+// import Hello from './Hello';
+// import Wrapper from './Wrapper';
+// import Counter from './Counter';
+// import InputSample from './InputSample';
+// import './App.css'
+// import CreateUser from './CreateUser';
 import UserList from './UserList';
+import CreateUser from './CreateUser';
+import useInputs from './useInput';
+const countActiveUsers = (users) => {
+  console.log('활성 사용자 수를 세는중...');
+  return users.filter(user => user.active).length;
+}
+
+const initialState = {
+  users: [
+      {
+          id: 1,
+          username: 'wanni',
+          email: 'wanni@gmail.com',
+          active:true
+      },
+      {
+          id: 2,
+          username: 'curry',
+          email: 'curry@gmail.com',
+          active:false
+      },
+      {
+          id: 3,
+          username: 'tester',
+          email: 'tester@gmail.com',
+          active:false
+      }
+  ]
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'CREATE_USER':
+      return {
+        users: state.users.concat(action.user)
+      };
+    case 'TOGGLE_USER':
+      return {
+        users: state.users.map(user =>
+          user.id === action.id ? { ...user, active: !user.active } : user
+        )
+      };
+    case 'REMOVE_USER':
+      return {
+        users: state.users.filter(user => user.id !== action.id)
+      };
+    default:
+      return state;
+  }
+}
+
+// UserDispatch 라는 이름으로 내보내줍니다.
+export const UserDispatch = React.createContext(null);
 
 const App = () => {
+  const [{ username, email }, onChange, onReset] = useInputs({
+    username: '',
+    email: ''
+  });
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const nextId = useRef(4);
 
-  const name = 'react';
-  const style = {
-    backgroundColor:'black',
-    color:'aqua',
-    fontSize:24,
-    padding: '1rem'
-  }
+  const { users } = state;
 
+
+  const onCreate = useCallback(() => {
+    dispatch({
+      type: 'CREATE_USER',
+      user: {
+        id: nextId.current,
+        username,
+        email
+      }
+    });
+    onReset();
+    nextId.current += 1;
+  }, [username, email, onReset]);
+
+  const count = useMemo(() => countActiveUsers(users), [users]);
   return (
-      <Wrapper>
-        {/*주석은 화면에 안보인다.*/}
-        /*중괄호로 감싸지 않으면 클라이언트단에 출력된다.*/
-        <Hello name="react" color="red" isSpecial={true}
-          // 열리는 태그 내부에서는 일허게 주석을 작성 할 수 있다.
-        />
-        <Hello />
-        <Hello />
-        <div style={style}>{name}</div>
-        <div className='gray-box'></div>
-        <Counter />
-        <InputSample />
-        <UserList />
-      </Wrapper>
+    <UserDispatch.Provider value={dispatch}>
+      <CreateUser
+        username={username}
+        email={email}
+        onChange={onChange}
+        onCreate={onCreate}
+      />
+      <UserList users={users} />
+      <div>활성사용자 수 : {count}</div>
+    </UserDispatch.Provider>
   );
 }
+
 
 export default App;
